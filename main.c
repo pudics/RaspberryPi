@@ -1,11 +1,17 @@
 #include <stdio.h>
 #include <time.h>
 
+#include <stdlib.h>
 
-int main()
+#include <sys/types.h>
+#include <sys/socket.h>
+
+#include <netinet/in.h>
+
+#include <arpa/inet.h>
+
+int main(int argc, char *argv[])
 {
-    printf("HELLO\n");
-
     // Get time =======================================================================
     time_t currentTime;
     char *currentTimeInString;
@@ -63,10 +69,58 @@ int main()
     }
 
 
-    // Get temperature =======================================================================
+    // Get weather temperature =======================================================================
+    
+    // create a socket
+    int networkSocket;
+    networkSocket = socket(AF_INET, SOCK_STREAM, 0);
 
+    // specify an address for the socket
+    struct sockaddr_in server_address;
+    server_address.sin_family = AF_INET;
+    server_address.sin_port = htons(9002);
+    server_address.sin_addr.s_addr = INADDR_ANY;
+
+    int connection_status = connect(networkSocket, (struct sockaddr *)&server_address, sizeof(server_address));
+    // check for error with the connection
+    if (connection_status == -1)
+    {
+        printf("There was an error making a connection to the remote socket.\n");
+    }
+
+    // receive data from the server
+    char server_response[256];
+    recv(networkSocket, &server_response, sizeof(server_response), 0);
+
+    // print out the server's response
+    printf("The server sent the data: %s\n", server_response);
+
+    // and then close the socket
+    close(sock);
 
     //Get EUR to HUF exchange rate =======================================================================
+    char *address;
+    address = argv[1];
+
+    int client_socket;
+    client_socket = socket(AF_INET, SOCK_STREAM, 0);
+
+    // connect to an address
+    struct sockaddr_in remote_address;
+    remote_address.sin_family = AF_INET;
+    remote_address.sin_port = htons(80);
+    inet_aton(address, &remote_address.sin_addr.s_addr);
+
+    connect(client_socket, (struct sockaddr *)&remote_address, sizeof(remote_address));
+
+    char request[] = "GET / HTTP/1.1\r\n\r\n";
+    char response[4096];
+
+    send(client_socket, request, sizeof(request), 0);
+    recv(client_socket, &response, sizeof(response), 0);
+
+    printf("response from the server: %s\n", response);
+    close(client_socket);
 
 
     // Get gold price in HUF =======================================================================
